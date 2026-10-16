@@ -1,11 +1,12 @@
 # 23CSE301 — Machine Learning Capstone
 
-Two independent supervised-learning tracks — **Classification** and **Regression** — each implemented as a self-contained Jupyter notebook with full EDA, preprocessing, model comparison, cross-validation, and interpretation.
+Three machine learning tracks — **Classification**, **Regression**, and **Clustering** — each implemented as a self-contained Jupyter notebook with complete EDA, preprocessing, model evaluation, and an interactive full-stack prediction application.
 
-| Track | Notebook | Dataset | Target |
+| Track | Notebook | Dataset | Target / Task |
 |---|---|---|---|
 | Classification | `classification.ipynb` | `bank-additional-full.csv` (Bank Marketing) | `y` — will the client subscribe to a term deposit? (yes/no) |
 | Regression | `regression.ipynb` | `Life Expectancy Data.csv` | `Life expectancy` (years) |
+| Clustering | `clustering.ipynb` | `Dry_Bean_Dataset.xlsx` (Koklu & Ozkan) | Identify bean varieties from morphological geometry |
 
 ---
 
@@ -14,16 +15,24 @@ Two independent supervised-learning tracks — **Classification** and **Regressi
 ```
 .
 ├── data/
-│   ├── bank-additional-full.csv
-│   └── Life Expectancy Data.csv
+│   ├── Dry_Bean_Dataset.xlsx
+│   ├── Life Expectancy Data.csv
+│   └── bank-additional-full.csv
 ├── notebooks/
 │   ├── classification.ipynb
+│   ├── clustering.ipynb
 │   └── regression.ipynb
+├── ml-capstone-app/
+│   ├── api/predict.py
+│   ├── models/
+│   ├── public/index.html
+│   ├── app.py
+│   ├── local_server.py
+│   ├── requirements.txt
+│   └── vercel.json
 ├── requirements.txt
 └── README.md
 ```
-
-> **Note on filenames:** both notebooks look for their CSV in a few common locations (`../data/`, `data/`, or beside the notebook). The regression notebook specifically expects the file named `Life Expectancy Data.csv` (with spaces). If your copy is named `Life_Expectancy_Data.csv`, either rename it or add that path to the `DATA_CANDIDATES` list near the top of the notebook.
 
 ## Setup
 
@@ -93,6 +102,37 @@ Random Forest is the best model overall; the four linear models cluster tightly,
 
 ---
 
+## 3. Clustering — Dry Bean Dataset (`clustering.ipynb`)
+
+**Goal:** Unsupervised grouping of 13,611 dry bean specimens across 16 morphological geometric features into coherent clusters without ground-truth labels during training.
+
+**Pipeline:**
+- Exploratory data analysis, box plots, IQR outlier checks, and correlation heatmaps.
+- Preprocessing with StandardScaler and feature space variants (PCA dimensionality reduction).
+- Algorithms evaluated: K-Means (k=3 to 10) and Agglomerative Hierarchical Clustering (Ward, Average, Complete linkage).
+- Model selection using Elbow method, Silhouette scores, and post-hoc purity validation against registered varieties.
+- Serialization of the optimal pipeline into `models/clustering_pipeline.pkl`.
+
+---
+
+## 4. Interactive Web Application (`ml-capstone-app/`)
+
+An interactive application providing instant predictions across all three tracks:
+- **Streamlit GUI (`app.py`):** Interactive parameter sliders, dropdowns, and live metric cards.
+- **Web Interface (`public/index.html`):** Fast, clean, dependency-free responsive interface.
+- **Serverless API (`api/predict.py`):** Python handler deployable to Vercel or run locally via `local_server.py`.
+
+```bash
+cd ml-capstone-app
+pip install -r requirements.txt
+python local_server.py    # runs web UI at http://localhost:8000
+# or
+streamlit run app.py      # runs Streamlit GUI
+```
+
+---
+
 ## Reproducibility
 
-Both notebooks set `RANDOM_STATE = 42` for all splits and stochastic models, and fit every preprocessing step (`SimpleImputer`, `StandardScaler`, `OneHotEncoder`) only on the training fold via `sklearn` `Pipeline`/`ColumnTransformer`, so results are deterministic and free of train/test leakage.
+All notebooks set `RANDOM_STATE = 42` for all splits and stochastic models, and fit every preprocessing step (`SimpleImputer`, `StandardScaler`, `OneHotEncoder`) only on the training fold via `sklearn` `Pipeline`/`ColumnTransformer`, so results are deterministic and free of train/test leakage.
+

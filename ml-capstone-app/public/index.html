@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Capstone · 23CSE301</title>
+  <meta name="description" content="Interactive ML Capstone app — Classification, Regression & Clustering predictions. 23CSE301 B.Tech CSE 2026-27." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & tokens ─────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f4f6f9;
+      --surface: #ffffff;
+      --border:  #e2e8f0;
+      --txt:     #1e293b;
+      --txt2:    #64748b;
+      --blue:    #2563eb;
+      --green:   #059669;
+      --purple:  #7c3aed;
+      --red:     #dc2626;
+      --radius:  10px;
+      --shadow:  0 1px 6px rgba(0,0,0,.08);
+    }
+    html { font-family: 'Inter', sans-serif; font-size: 15px; color: var(--txt); background: var(--bg); }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Nav ─────────────────────────────────── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 28px; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    nav .logo { font-size: 1rem; font-weight: 700; color: var(--blue); margin-right: 24px; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab {
+      padding: 7px 16px; border-radius: 7px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 500; color: var(--txt2);
+      border: none; background: transparent; transition: all .15s;
+    }
+    .nav-tab:hover   { background: var(--bg); color: var(--txt); }
+    .nav-tab.active  { background: var(--blue); color: #fff; }
+
+    /* ── Layout ──────────────────────────────── */
+    main { flex: 1; max-width: 1000px; margin: 0 auto; padding: 32px 20px; width: 100%; }
+
+    /* ── Section hero ────────────────────────── */
+    .hero {
+      border-radius: var(--radius);
+      padding: 24px 28px; margin-bottom: 28px; color: #fff;
+    }
+    .hero-cls  { background: linear-gradient(120deg, #1d4ed8, #0891b2); }
+    .hero-reg  { background: linear-gradient(120deg, #065f46, #0d9488); }
+    .hero-clu  { background: linear-gradient(120deg, #5b21b6, #7c3aed); }
+    .hero-home { background: linear-gradient(120deg, #1e40af, #0f766e); }
+    .hero h1   { font-size: 1.4rem; font-weight: 700; }
+    .hero p    { font-size: 0.9rem; opacity: .85; margin-top: 4px; }
+
+    /* ── Cards ───────────────────────────────── */
+    .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px 20px;
+      box-shadow: var(--shadow);
+    }
+    .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+    .card p  { color: var(--txt2); font-size: 0.85rem; line-height: 1.6; }
+    .card-btn {
+      margin-top: 16px; width: 100%; padding: 9px;
+      border-radius: 7px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--txt); font-weight: 600;
+      font-size: 0.85rem; cursor: pointer; transition: all .15s;
+    }
+    .card-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    /* ── Form grid ───────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; margin-bottom: 24px; }
+    .form-col h4 { font-size: 0.82rem; font-weight: 600; text-transform: uppercase;
+                   letter-spacing: .05em; color: var(--txt2); margin-bottom: 12px; }
+    .field { margin-bottom: 13px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 500;
+                   color: var(--txt2); margin-bottom: 4px; }
+    .field input[type=range] { width: 100%; accent-color: var(--blue); }
+    .field .range-row { display: flex; align-items: center; gap: 8px; }
+    .field .range-val {
+      font-size: 0.82rem; font-weight: 600; color: var(--blue);
+      min-width: 52px; text-align: right;
+    }
+    .field select, .field input[type=number] {
+      width: 100%; padding: 7px 10px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-size: 0.88rem; color: var(--txt); outline: none;
+    }
+    .field select:focus, .field input:focus { border-color: var(--blue); }
+
+    /* ── Submit btn ──────────────────────────── */
+    .submit-btn {
+      width: 100%; padding: 12px; border-radius: 8px; border: none;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      transition: all .15s; color: #fff;
+    }
+    .submit-btn.cls  { background: var(--blue); }
+    .submit-btn.reg  { background: var(--green); }
+    .submit-btn.clu  { background: var(--purple); }
+    .submit-btn:hover { opacity: .88; transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+
+    /* ── Result box ──────────────────────────── */
+    .result {
+      margin-top: 18px; padding: 18px 22px;
+      border-radius: var(--radius); display: none;
+      font-size: 0.95rem; line-height: 1.7;
+    }
+    .result.show { display: block; }
+    .result.yes  { background: #d1fae5; border: 1.5px solid #34d399; color: #065f46; }
+    .result.no   { background: #fee2e2; border: 1.5px solid #f87171; color: #7f1d1d; }
+    .result.reg  { background: #e0f2fe; border: 1.5px solid #38bdf8; color: #0c4a6e; }
+    .result.clu  { background: #f5f3ff; border: 1.5px solid #a78bfa; color: #3b0764; }
+    .result h3   { font-size: 1.1rem; margin-bottom: 6px; }
+
+    /* ── Metrics row ─────────────────────────── */
+    .metrics { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+    .metric {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 18px; box-shadow: var(--shadow); flex: 1; min-width: 120px;
+    }
+    .metric .label { font-size: 0.75rem; color: var(--txt2); font-weight: 500; }
+    .metric .value { font-size: 1.2rem; font-weight: 700; color: var(--txt); margin-top: 2px; }
+
+    /* ── Spinner ─────────────────────────────── */
+    .spinner { display: none; text-align: center; padding: 20px; color: var(--txt2); }
+    .spinner.show { display: block; }
+
+    /* ── Sections ────────────────────────────── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Footer ──────────────────────────────── */
+    footer {
+      text-align: center; padding: 18px; color: var(--txt2);
+      font-size: 0.8rem; border-top: 1px solid var(--border);
+      background: var(--surface); margin-top: auto;
+    }
+
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 700px) {
+      .form-grid, .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="logo">ML Capstone</span>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('home')">Home</button>
+    <button class="nav-tab" onclick="showSection('cls')">Classification</button>
+    <button class="nav-tab" onclick="showSection('reg')">Regression</button>
+    <button class="nav-tab" onclick="showSection('clu')">Clustering</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ══════════════ HOME ══════════════ -->
+  <section id="sec-home" class="section active">
+    <div class="hero hero-home">
+      <h1>ML Capstone · 23CSE301</h1>
+      <p>Interactive prediction app — B.Tech CSE III Year · Academic Year 2026–27</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>Classification</h3>
+        <p><b>Dataset:</b> Bank Marketing (UCI)<br>
+           <b>Task:</b> Will the client subscribe to a term deposit?<br>
+           <b>Model:</b> Gradient Boosting Classifier<br>
+           <b>Metric:</b> ROC-AUC</p>
+        <button class="card-btn" onclick="showSection('cls')">Try Classification →</button>
+      </div>
+      <div class="card">
+        <h3>Regression</h3>
+        <p><b>Dataset:</b> Life Expectancy (WHO)<br>
+           <b>Task:</b> Predict life expectancy in years<br>
+           <b>Model:</b> Random Forest Regressor<br>
+           <b>Metric:</b> R²</p>
+        <button class="card-btn" onclick="showSection('reg')">Try Regression →</button>
+      </div>
+      <div class="card">
+        <h3>Clustering</h3>
+        <p><b>Dataset:</b> Dry Bean (Koklu & Ozkan)<br>
+           <b>Task:</b> Identify bean variety by geometry<br>
+           <b>Model:</b> K-Means (k = 3)<br>
+           <b>Metric:</b> Silhouette Score</p>
+        <button class="card-btn" onclick="showSection('clu')">Try Clustering →</button>
+      </div>
+    </div>
+    <br>
+    <div class="card">
+      <h3>How to use</h3>
+      <p>Pick a track from the nav bar → fill in the feature values → click <b>Predict</b> to get an instant result from the trained model.</p>
+      <p style="margin-top:8px;color:var(--txt2);font-size:0.82rem;">23CSE301 Machine Learning Capstone — Team: CB.SC.U4CSE24712, CB.SC.U4CSE24761, CB.SC.U4CSE24727</p>
+    </div>
+  </section>
+
+
+  <!-- ══════════════ CLASSIFICATION ══════════════ -->
+  <section id="sec-cls" class="section">
+    <div class="hero hero-cls">
+      <h1>Classification · Bank Marketing</h1>
+      <p>Will this client subscribe to a term deposit? — Binary: Yes / No</p>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-col">
+        <h4>Demographics</h4>
+        <div class="field">
+          <label>Age</label>
+          <div class="range-row">
+            <input type="range" id="cls-age" min="18" max="95" value="38" oninput="rv('cls-age-v',this.value)">
+            <span class="range-val" id="cls-age-v">38</span>
+          </div>
+        </div>
+        <div class="field"><label>Job</label>
+          <select id="cls-job">
+            <option>admin.</option><option>blue-collar</option><option>entrepreneur</option>
+            <option>housemaid</option><option>management</option><option>retired</option>
+            <option>self-employed</option><option>services</option><option>student</option>
+            <option>technician</option><option>unemployed</option><option>unknown</option>
+          </select>
+        </div>
+        <div class="field"><label>Marital Status</label>
+          <select id="cls-marital">
+            <option>married</option><option>single</option><option>divorced</option><option>unknown</option>
+          </select>
+        </div>
+        <div class="field"><label>Education</label>
+          <select id="cls-education">
+            <option>university.degree</option><option>high.school</option>
+            <option>professional.course</option><option>basic.9y</option>
+            <option>basic.6y</option><option>basic.4y</option><option>illiterate</option><option>unknown</option>
+          </select>
+        </div>
+        <div class="field"><label>Credit Default?</label>
+          <select id="cls-default"><option>no</option><option>yes</option><option>unknown</option></select>
+        </div>
+        <div class="field"><label>Housing Loan?</label>
+          <select id="cls-housing"><option>yes</option><option>no</option><option>unknown</option></select>
+        </div>
+        <div class="field"><label>Personal Loan?</label>
+          <select id="cls-loan"><option>no</option><option>yes</option><option>unknown</option></select>
+        </div>
+      </div>
+
+      <div class="form-col">
+        <h4>Campaign Contact</h4>
+        <div class="field"><label>Contact Type</label>
+          <select id="cls-contact"><option>cellular</option><option>telephone</option></select>
+        </div>
+        <div class="field"><label>Last Contact Month</label>
+          <select id="cls-month">
+            <option>may</option><option>jun</option><option>jul</option><option>aug</option>
+            <option>oct</option><option>nov</option><option>dec</option><option>jan</option>
+            <option>feb</option><option>mar</option><option>apr</option><option>sep</option>
+          </select>
+        </div>
+        <div class="field"><label>Day of Week</label>
+          <select id="cls-day"><option>mon</option><option>tue</option><option>wed</option><option>thu</option><option>fri</option></select>
+        </div>
+        <div class="field">
+          <label>Contacts in Campaign</label>
+          <div class="range-row">
+            <input type="range" id="cls-campaign" min="1" max="50" value="2" oninput="rv('cls-campaign-v',this.value)">
+            <span class="range-val" id="cls-campaign-v">2</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Days Since Last Contact (999 = never)</label>
+          <div class="range-row">
+            <input type="range" id="cls-pdays" min="0" max="999" value="999" oninput="rv('cls-pdays-v',this.value)">
+            <span class="range-val" id="cls-pdays-v">999</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Previous Contacts</label>
+          <div class="range-row">
+            <input type="range" id="cls-previous" min="0" max="20" value="0" oninput="rv('cls-previous-v',this.value)">
+            <span class="range-val" id="cls-previous-v">0</span>
+          </div>
+        </div>
+        <div class="field"><label>Previous Campaign Outcome</label>
+          <select id="cls-poutcome"><option>nonexistent</option><option>failure</option><option>success</option></select>
+        </div>
+      </div>
+
+      <div class="form-col">
+        <h4>Socio-economic Context</h4>
+        <div class="field">
+          <label>Employment Variation Rate</label>
+          <div class="range-row">
+            <input type="range" id="cls-evr" min="-3.5" max="1.5" step="0.1" value="1.1" oninput="rv('cls-evr-v',this.value)">
+            <span class="range-val" id="cls-evr-v">1.1</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Consumer Price Index</label>
+          <div class="range-row">
+            <input type="range" id="cls-cpi" min="92" max="95" step="0.01" value="93.9" oninput="rv('cls-cpi-v',this.value)">
+            <span class="range-val" id="cls-cpi-v">93.9</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Consumer Confidence Index</label>
+          <div class="range-row">
+            <input type="range" id="cls-cci" min="-51" max="-26" step="0.1" value="-36.4" oninput="rv('cls-cci-v',this.value)">
+            <span class="range-val" id="cls-cci-v">-36.4</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Euribor 3-Month Rate</label>
+          <div class="range-row">
+            <input type="range" id="cls-eur" min="0.6" max="5.1" step="0.01" value="4.9" oninput="rv('cls-eur-v',this.value)">
+            <span class="range-val" id="cls-eur-v">4.9</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>No. of Employees (×1000)</label>
+          <div class="range-row">
+            <input type="range" id="cls-nremp" min="4963.6" max="5228.1" step="0.1" value="5191" oninput="rv('cls-nremp-v',this.value)">
+            <span class="range-val" id="cls-nremp-v">5191</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn cls" onclick="predict('cls')">Predict Subscription</button>
+    <div class="spinner" id="cls-spinner">Predicting…</div>
+    <div class="result" id="cls-result"></div>
+  </section>
+
+
+  <!-- ══════════════ REGRESSION ══════════════ -->
+  <section id="sec-reg" class="section">
+    <div class="hero hero-reg">
+      <h1>Regression · Life Expectancy</h1>
+      <p>Predict average life expectancy (in years) for a country-year observation</p>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-col">
+        <h4>Basic Info</h4>
+        <div class="field"><label>Development Status</label>
+          <select id="reg-status"><option>Developing</option><option>Developed</option></select>
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <div class="range-row">
+            <input type="range" id="reg-year" min="2000" max="2015" value="2010" oninput="rv('reg-year-v',this.value)">
+            <span class="range-val" id="reg-year-v">2010</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Schooling (years)</label>
+          <div class="range-row">
+            <input type="range" id="reg-schooling" min="0" max="20.7" step="0.1" value="12" oninput="rv('reg-schooling-v',this.value)">
+            <span class="range-val" id="reg-schooling-v">12</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Income Composition (HDI proxy)</label>
+          <div class="range-row">
+            <input type="range" id="reg-income" min="0" max="0.95" step="0.01" value="0.65" oninput="rv('reg-income-v',this.value)">
+            <span class="range-val" id="reg-income-v">0.65</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>GDP per capita (USD)</label>
+          <input type="number" id="reg-gdp" min="1" max="120000" value="7000" />
+        </div>
+        <div class="field">
+          <label>Population</label>
+          <input type="number" id="reg-pop" min="100" max="1400000000" value="5000000" />
+        </div>
+        <div class="field">
+          <label>Total Health Exp. (% GDP)</label>
+          <div class="range-row">
+            <input type="range" id="reg-texp" min="0.37" max="17.6" step="0.01" value="5.9" oninput="rv('reg-texp-v',this.value)">
+            <span class="range-val" id="reg-texp-v">5.9</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-col">
+        <h4>Health Indicators</h4>
+        <div class="field">
+          <label>Adult Mortality (per 1000)</label>
+          <div class="range-row">
+            <input type="range" id="reg-amort" min="1" max="723" value="150" oninput="rv('reg-amort-v',this.value)">
+            <span class="range-val" id="reg-amort-v">150</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Infant Deaths (per 1000)</label>
+          <div class="range-row">
+            <input type="range" id="reg-ideaths" min="0" max="1800" value="20" oninput="rv('reg-ideaths-v',this.value)">
+            <span class="range-val" id="reg-ideaths-v">20</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Under-5 Deaths (per 1000)</label>
+          <div class="range-row">
+            <input type="range" id="reg-u5" min="0" max="2500" value="30" oninput="rv('reg-u5-v',this.value)">
+            <span class="range-val" id="reg-u5-v">30</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>HIV/AIDS Deaths (per 1000 under-5)</label>
+          <div class="range-row">
+            <input type="range" id="reg-hiv" min="0.1" max="50.6" step="0.1" value="0.5" oninput="rv('reg-hiv-v',this.value)">
+            <span class="range-val" id="reg-hiv-v">0.5</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Average BMI</label>
+          <div class="range-row">
+            <input type="range" id="reg-bmi" min="1" max="87.3" step="0.1" value="38" oninput="rv('reg-bmi-v',this.value)">
+            <span class="range-val" id="reg-bmi-v">38</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Alcohol Consumption (L/capita)</label>
+          <div class="range-row">
+            <input type="range" id="reg-alc" min="0.01" max="17.87" step="0.01" value="4.5" oninput="rv('reg-alc-v',this.value)">
+            <span class="range-val" id="reg-alc-v">4.5</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Measles Cases</label>
+          <div class="range-row">
+            <input type="range" id="reg-measles" min="0" max="50000" value="1000" oninput="rv('reg-measles-v',this.value)">
+            <span class="range-val" id="reg-measles-v">1000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-col">
+        <h4>Immunisation</h4>
+        <div class="field">
+          <label>Hepatitis B (%)</label>
+          <div class="range-row">
+            <input type="range" id="reg-hepb" min="1" max="99" value="82" oninput="rv('reg-hepb-v',this.value)">
+            <span class="range-val" id="reg-hepb-v">82</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Polio (%)</label>
+          <div class="range-row">
+            <input type="range" id="reg-polio" min="3" max="99" value="83" oninput="rv('reg-polio-v',this.value)">
+            <span class="range-val" id="reg-polio-v">83</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Diphtheria (%)</label>
+          <div class="range-row">
+            <input type="range" id="reg-diph" min="2" max="99" value="82" oninput="rv('reg-diph-v',this.value)">
+            <span class="range-val" id="reg-diph-v">82</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Gov. Expenditure on Health (USD)</label>
+          <div class="range-row">
+            <input type="range" id="reg-pexp" min="0" max="10000" value="500" oninput="rv('reg-pexp-v',this.value)">
+            <span class="range-val" id="reg-pexp-v">500</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Thinness 1–19 years (%)</label>
+          <div class="range-row">
+            <input type="range" id="reg-thin1" min="0.1" max="27.7" step="0.1" value="4.8" oninput="rv('reg-thin1-v',this.value)">
+            <span class="range-val" id="reg-thin1-v">4.8</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Thinness 5–9 years (%)</label>
+          <div class="range-row">
+            <input type="range" id="reg-thin2" min="0.1" max="28.6" step="0.1" value="4.9" oninput="rv('reg-thin2-v',this.value)">
+            <span class="range-val" id="reg-thin2-v">4.9</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn reg" onclick="predict('reg')">Predict Life Expectancy</button>
+    <div class="spinner" id="reg-spinner">Predicting…</div>
+    <div class="result" id="reg-result"></div>
+  </section>
+
+
+  <!-- ══════════════ CLUSTERING ══════════════ -->
+  <section id="sec-clu" class="section">
+    <div class="hero hero-clu">
+      <h1>Clustering · Dry Bean Identification</h1>
+      <p>Enter 16 geometric measurements to find the cluster.</p>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-col">
+        <h4>Size &amp; Area</h4>
+        <div class="field"><label>Area (px²)</label>
+          <input type="number" id="clu-area" min="20000" max="254616" value="80000" />
+        </div>
+        <div class="field"><label>Perimeter (px)</label>
+          <input type="number" id="clu-perimeter" min="500" max="1985" value="1000" step="1" />
+        </div>
+        <div class="field"><label>Major Axis Length (px)</label>
+          <input type="number" id="clu-major" min="183" max="738" value="350" step="0.5" />
+        </div>
+        <div class="field"><label>Minor Axis Length (px)</label>
+          <input type="number" id="clu-minor" min="122" max="460" value="220" step="0.5" />
+        </div>
+        <div class="field"><label>Equiv. Diameter (px)</label>
+          <input type="number" id="clu-eqdiam" min="160" max="570" value="300" step="0.5" />
+        </div>
+        <div class="field"><label>Convex Area (px²)</label>
+          <input type="number" id="clu-carea" min="20000" max="263261" value="82000" />
+        </div>
+        <div class="field">
+          <label>Extent (0–1)</label>
+          <div class="range-row">
+            <input type="range" id="clu-extent" min="0.55" max="0.87" step="0.001" value="0.75" oninput="rv('clu-extent-v',this.value)">
+            <span class="range-val" id="clu-extent-v">0.75</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Solidity (0–1)</label>
+          <div class="range-row">
+            <input type="range" id="clu-solidity" min="0.919" max="0.994" step="0.001" value="0.98" oninput="rv('clu-solidity-v',this.value)">
+            <span class="range-val" id="clu-solidity-v">0.98</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-col">
+        <h4>Shape Descriptors</h4>
+        <div class="field">
+          <label>Eccentricity (0–1)</label>
+          <div class="range-row">
+            <input type="range" id="clu-ecc" min="0" max="1" step="0.001" value="0.75" oninput="rv('clu-ecc-v',this.value)">
+            <span class="range-val" id="clu-ecc-v">0.75</span>
+          </div>
+        </div>
+        <div class="field"><label>Convex Perimeter (px)</label>
+          <input type="number" id="clu-cperi" min="500" max="1985" value="990" step="1" />
+        </div>
+        <div class="field">
+          <label>Aspect Ratio</label>
+          <div class="range-row">
+            <input type="range" id="clu-ar" min="1" max="3.2" step="0.01" value="1.7" oninput="rv('clu-ar-v',this.value)">
+            <span class="range-val" id="clu-ar-v">1.7</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Roundness (0–1)</label>
+          <div class="range-row">
+            <input type="range" id="clu-rnd" min="0.48" max="0.99" step="0.001" value="0.85" oninput="rv('clu-rnd-v',this.value)">
+            <span class="range-val" id="clu-rnd-v">0.85</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Compactness (0–1)</label>
+          <div class="range-row">
+            <input type="range" id="clu-comp" min="0.64" max="1" step="0.001" value="0.88" oninput="rv('clu-comp-v',this.value)">
+            <span class="range-val" id="clu-comp-v">0.88</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-col">
+        <h4>Shape Factors</h4>
+        <div class="field">
+          <label>Shape Factor 1</label>
+          <div class="range-row">
+            <input type="range" id="clu-sf1" min="0.002" max="0.012" step="0.0001" value="0.007" oninput="rv('clu-sf1-v',parseFloat(this.value).toFixed(4))">
+            <span class="range-val" id="clu-sf1-v">0.0070</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Shape Factor 2</label>
+          <div class="range-row">
+            <input type="range" id="clu-sf2" min="0" max="0.005" step="0.00001" value="0.001" oninput="rv('clu-sf2-v',parseFloat(this.value).toFixed(5))">
+            <span class="range-val" id="clu-sf2-v">0.00100</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Shape Factor 3</label>
+          <div class="range-row">
+            <input type="range" id="clu-sf3" min="0.4" max="1" step="0.001" value="0.78" oninput="rv('clu-sf3-v',this.value)">
+            <span class="range-val" id="clu-sf3-v">0.78</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Shape Factor 4</label>
+          <div class="range-row">
+            <input type="range" id="clu-sf4" min="0.95" max="1" step="0.0001" value="0.994" oninput="rv('clu-sf4-v',parseFloat(this.value).toFixed(4))">
+            <span class="range-val" id="clu-sf4-v">0.9940</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn clu" onclick="predict('clu')">Identify Cluster</button>
+    <div class="spinner" id="clu-spinner">Identifying…</div>
+    <div class="result" id="clu-result"></div>
+  </section>
+
+</main>
+
+<footer>
+  23CSE301 Machine Learning Capstone · B.Tech CSE III Year · Academic Year 2026–27
+</footer>
+
+<script>
+// ── helpers ───────────────────────────────────────
+function rv(id, val) { document.getElementById(id).textContent = val; }
+
+function showSection(key) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + key).classList.add('active');
+  const idx = { home:0, cls:1, reg:2, clu:3 }[key];
+  document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+}
+
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+// ── prediction dispatcher ─────────────────────────
+async function predict(track) {
+  const spinner = document.getElementById(track + '-spinner');
+  const result  = document.getElementById(track + '-result');
+  spinner.classList.add('show');
+  result.className = 'result';
+
+  let body = {};
+  if (track === 'cls') {
+    body = {
+      age: +v('cls-age'), job: v('cls-job'), marital: v('cls-marital'),
+      education: v('cls-education'), default: v('cls-default'),
+      housing: v('cls-housing'), loan: v('cls-loan'),
+      contact: v('cls-contact'), month: v('cls-month'), day_of_week: v('cls-day'),
+      campaign: +v('cls-campaign'), pdays: +v('cls-pdays'), previous: +v('cls-previous'),
+      poutcome: v('cls-poutcome'), emp_var_rate: +v('cls-evr'),
+      cons_price_idx: +v('cls-cpi'), cons_conf_idx: +v('cls-cci'),
+      euribor3m: +v('cls-eur'), nr_employed: +v('cls-nremp'),
+    };
+  } else if (track === 'reg') {
+    body = {
+      status: v('reg-status'), year: +v('reg-year'), schooling: +v('reg-schooling'),
+      income_composition: +v('reg-income'), adult_mortality: +v('reg-amort'),
+      infant_deaths: +v('reg-ideaths'), under_five_deaths: +v('reg-u5'),
+      hiv_aids: +v('reg-hiv'), bmi: +v('reg-bmi'), alcohol: +v('reg-alc'),
+      total_expenditure: +v('reg-texp'), hepatitis_b: +v('reg-hepb'),
+      polio: +v('reg-polio'), diphtheria: +v('reg-diph'), measles: +v('reg-measles'),
+      percentage_expenditure: +v('reg-pexp'), gdp: +v('reg-gdp'),
+      population: +v('reg-pop'), thinness_1_19: +v('reg-thin1'), thinness_5_9: +v('reg-thin2'),
+    };
+  } else {
+    body = {
+      area: +v('clu-area'), perimeter: +v('clu-perimeter'),
+      major_axis_length: +v('clu-major'), minor_axis_length: +v('clu-minor'),
+      equiv_diameter: +v('clu-eqdiam'), convex_area: +v('clu-carea'),
+      extent: +v('clu-extent'), solidity: +v('clu-solidity'),
+      eccentricity: +v('clu-ecc'), aspect_ratio: +v('clu-ar'),
+      roundness: +v('clu-rnd'), compactness: +v('clu-comp'),
+      shape_factor1: +v('clu-sf1'), shape_factor2: +v('clu-sf2'),
+      shape_factor3: +v('clu-sf3'), shape_factor4: +v('clu-sf4'),
+    };
+  }
+
+  try {
+    const trackMap = { cls: 'classification', reg: 'regression', clu: 'clustering' };
+    const res  = await fetch('/api/predict?track=' + (trackMap[track] || track), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    spinner.classList.remove('show');
+    renderResult(track, data, result);
+  } catch(e) {
+    spinner.classList.remove('show');
+    result.className = 'result no show';
+    result.innerHTML = '<h3>Error</h3><p>' + e.message + '</p>';
+  }
+}
+
+function renderResult(track, d, el) {
+  if (d.error) {
+    el.className = 'result no show';
+    el.innerHTML = '<h3>Error</h3><p>' + d.error + '</p>';
+    return;
+  }
+
+  if (track === 'cls') {
+    const isYes = d.prediction === 1;
+    el.className = 'result show ' + (isYes ? 'yes' : 'no');
+    el.innerHTML = `
+      <h3>${isYes ? 'YES — Likely to Subscribe' : 'NO — Unlikely to Subscribe'}</h3>
+      <div class="metrics">
+        <div class="metric"><div class="label">P(Yes)</div><div class="value">${d.prob_yes}%</div></div>
+        <div class="metric"><div class="label">P(No)</div><div class="value">${d.prob_no}%</div></div>
+        <div class="metric"><div class="label">Decision</div><div class="value">${d.label}</div></div>
+      </div>`;
+
+  } else if (track === 'reg') {
+    const le = d.prediction;
+    let msg = '';
+    if (le < 55)      msg = 'Well below global average — critical health indicators';
+    else if (le < 70) msg = 'Below global mean (~72 yrs)';
+    else if (le >= 80) msg = 'Excellent — comparable to developed nations';
+    else               msg = 'Above global average';
+    el.className = 'result show reg';
+    el.innerHTML = `
+      <h3>Predicted Life Expectancy: ${le} years</h3>
+      <p>${msg}</p>
+      <div class="metrics">
+        <div class="metric"><div class="label">Predicted (yrs)</div><div class="value">${le}</div></div>
+        <div class="metric"><div class="label">Immunization Index</div><div class="value">${d.immunization_index}%</div></div>
+      </div>`;
+
+  } else {
+    el.className = 'result show clu';
+    el.innerHTML = `
+      <h3>Cluster ${d.cluster} — Dominant Variety: ${d.variety}</h3>
+      <p style="margin-top:8px;font-size:0.85rem;opacity:.8;">
+        Note: Clusters are discovered using only geometric features. 
+        The variety name is a post-hoc label based on the dominant class within this cluster.
+      </p>
+      <div class="metrics">
+        <div class="metric"><div class="label">Cluster ID</div><div class="value">${d.cluster}</div></div>
+        <div class="metric"><div class="label">Variety</div><div class="value">${d.variety}</div></div>
+      </div>`;
+  }
+}
+</script>
+</body>
+</html>
