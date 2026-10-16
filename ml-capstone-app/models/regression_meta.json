@@ -1,0 +1,51 @@
+{
+  "num_features": [
+    "Year",
+    "Adult Mortality",
+    "infant deaths",
+    "Alcohol",
+    "percentage expenditure",
+    "Hepatitis B",
+    "Measles",
+    "BMI",
+    "under-five deaths",
+    "Polio",
+    "Total expenditure",
+    "Diphtheria",
+    "HIV/AIDS",
+    "GDP",
+    "Population",
+    "thinness  1-19 years",
+    "thinness 5-9 years",
+    "Income composition of resources",
+    "Schooling",
+    "immunization_index"
+  ],
+  "cat_features": [
+    "Status"
+  ],
+  "feature_cols": [
+    "Year",
+    "Status",
+    "Adult Mortality",
+    "infant deaths",
+    "Alcohol",
+    "percentage expenditure",
+    "Hepatitis B",
+    "Measles",
+    "BMI",
+    "under-five deaths",
+    "Polio",
+    "Total expenditure",
+    "Diphtheria",
+    "HIV/AIDS",
+    "GDP",
+    "Population",
+    "thinness  1-19 years",
+    "thinness 5-9 years",
+    "Income composition of resources",
+    "Schooling",
+    "immunization_index"
+  ],
+  "target": "Life expectancy"
+}

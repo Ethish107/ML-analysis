@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Vercel
+.vercel/
+
+# Data files (large – do NOT commit)
+../bank-additional-full.csv
+../Life Expectancy Data.csv
+../Dry_Bean_Dataset.xlsx
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
