@@ -1,0 +1,26 @@
+{
+  "feature_cols": [
+    "Area",
+    "Perimeter",
+    "MajorAxisLength",
+    "MinorAxisLength",
+    "AspectRation",
+    "Eccentricity",
+    "ConvexArea",
+    "EquivDiameter",
+    "Extent",
+    "Solidity",
+    "roundness",
+    "Compactness",
+    "ShapeFactor1",
+    "ShapeFactor2",
+    "ShapeFactor3",
+    "ShapeFactor4"
+  ],
+  "cluster_names": {
+    "0": "DERMASON",
+    "1": "BOMBAY",
+    "2": "HOROZ"
+  },
+  "n_clusters": 3
+}
