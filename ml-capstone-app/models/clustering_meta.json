@@ -22,5 +22,7 @@
     "1": "BOMBAY",
     "2": "HOROZ"
   },
-  "n_clusters": 3
+  "n_clusters": 3,
+  "task": "unsupervised_clustering",
+  "interpretation": "Post-hoc dominant variety label within morphological cluster (k=3). Not a 7-variety individual classifier."
 }
