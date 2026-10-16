@@ -23,9 +23,25 @@ from sklearn.cluster import KMeans
 
 RANDOM_STATE = 42
 MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-
 os.makedirs(MODELS_DIR, exist_ok=True)
+
+
+def find_dataset(filename: str) -> str:
+    """Locate dataset file across common repo layouts (root or data/ folder)."""
+    base_dirs = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."),
+        os.path.join(os.path.dirname(os.path.abspath(__file__))),
+        os.getcwd(),
+        os.path.join(os.getcwd(), ".."),
+    ]
+    candidates = []
+    for b in base_dirs:
+        candidates.append(os.path.join(b, "data", filename))
+        candidates.append(os.path.join(b, filename))
+    for p in candidates:
+        if os.path.exists(p):
+            return os.path.abspath(p)
+    raise FileNotFoundError(f"Could not find '{filename}'. Searched: {candidates}")
 
 
 # ===========================================================
@@ -34,11 +50,20 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 print("=" * 60)
 print("Training CLASSIFICATION model …")
 
-cls_path = os.path.join(DATA_DIR, "bank-additional-full.csv")
+cls_path = find_dataset("bank-additional-full.csv")
+print(f"  Loaded dataset from: {cls_path}")
 df_cls = pd.read_csv(cls_path, sep=";")
 
-# Drop leaky column
+# Drop leaky column (mirrors notebook §11)
 df_cls = df_cls.drop(columns=["duration"])
+
+# Outlier treatment (mirrors notebook §10.2 / Cell 40)
+# Capping campaign counts at 20 and previous contacts at 5
+df_cls["campaign"] = df_cls["campaign"].clip(upper=20)
+df_cls["previous"] = df_cls["previous"].clip(upper=5)
+
+# Drop duplicate rows (mirrors notebook §10.3 / Cell 44)
+df_cls = df_cls.drop_duplicates().reset_index(drop=True)
 
 # Feature engineering (mirrors notebook §13)
 df_cls["previously_contacted"] = (df_cls["pdays"] != 999).astype(int)
@@ -57,6 +82,14 @@ preprocessor_cls = ColumnTransformer([
                       ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False))]), cat_cls),
 ], remainder="drop")
 
+# Note on Model Selection for Production Deployment:
+# In the classification notebook (§23), Random Forest (CV ROC-AUC: 0.7991, std: 0.0069)
+# and Gradient Boosting (CV ROC-AUC: 0.7989, std: 0.0047) were the top two candidates,
+# virtually tied in cross-validation performance (difference of 0.0002).
+# Gradient Boosting is selected for web deployment because:
+#   1. Extremely lightweight serialization (~210 KB vs >30 MB for unconstrained Random Forest)
+#   2. Fast cold starts and sub-millisecond inference in serverless runtime (Vercel)
+#   3. Lower cross-fold variance (0.0047 vs 0.0069), providing consistent probability estimates
 cls_pipeline = Pipeline([
     ("pre", preprocessor_cls),
     ("clf", GradientBoostingClassifier(n_estimators=150, learning_rate=0.1,
@@ -88,7 +121,8 @@ print("  Saved classification_pipeline.pkl")
 print("=" * 60)
 print("Training REGRESSION model …")
 
-reg_path = os.path.join(DATA_DIR, "Life Expectancy Data.csv")
+reg_path = find_dataset("Life Expectancy Data.csv")
+print(f"  Loaded dataset from: {reg_path}")
 df_reg = pd.read_csv(reg_path)
 df_reg.columns = df_reg.columns.str.strip()
 
@@ -146,15 +180,14 @@ print("  Saved regression_pipeline.pkl")
 print("=" * 60)
 print("Training CLUSTERING model …")
 
-clu_path = os.path.join(DATA_DIR, "Dry_Bean_Dataset.xlsx")
+clu_path = find_dataset("Dry_Bean_Dataset.xlsx")
+print(f"  Loaded dataset from: {clu_path}")
 df_clu = pd.read_excel(clu_path)
 
 feature_cols_clu = [c for c in df_clu.columns if c != "Class"]
 y_clu = df_clu["Class"]
-X_clu = df_clu[feature_cols_clu].drop_duplicates().reset_index(drop=True)
-y_clu_aligned = df_clu.loc[X_clu.index, "Class"] if X_clu.index.max() < len(df_clu) else y_clu
 
-# Recompute with full data
+# Recompute with full deduplicated data (mirrors clustering notebook)
 df_clu_clean = df_clu.drop_duplicates().reset_index(drop=True)
 X_clu = df_clu_clean[feature_cols_clu].copy()
 y_clu = df_clu_clean["Class"].copy()
@@ -167,15 +200,23 @@ clu_pipeline.fit(X_clu)
 
 labels = clu_pipeline.predict(X_clu)
 ct = pd.crosstab(pd.Series(labels, name="cluster"), y_clu)
+
+# Note on Clustering Output Interpretation:
+# This is an unsupervised model (k=3) partitioning morphological feature space.
+# It does NOT perform a 7-class supervised bean classification.
+# The variety label assigned to each cluster is strictly a post-hoc modal/dominant
+# variety within that geometric cluster.
 cluster_names = {
     int(cl): str(ct.loc[cl].idxmax()) for cl in ct.index
 }
-print("  Cluster -> dominant variety: " + str(cluster_names))
+print("  Cluster -> post-hoc dominant variety label: " + str(cluster_names))
 
 clu_meta = {
     "feature_cols": feature_cols_clu,
     "cluster_names": cluster_names,
     "n_clusters": 3,
+    "task": "unsupervised_clustering",
+    "interpretation": "Post-hoc dominant variety label within morphological cluster (k=3). Not a 7-variety individual classifier.",
 }
 joblib.dump(clu_pipeline, os.path.join(MODELS_DIR, "clustering_pipeline.pkl"))
 with open(os.path.join(MODELS_DIR, "clustering_meta.json"), "w") as f:
